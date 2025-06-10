@@ -10,7 +10,7 @@ import { WaterQualityChart } from "@/components/water-quality-chart"
 import { ReportGenerator } from "@/components/report-generator"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Droplets } from "lucide-react"
-
+import { PredictionCard } from "@/components/prediction-card"
 interface WaterMetric {
   id: string
   name: string
@@ -138,7 +138,7 @@ export default function DashboardPage() {
             </Card>
           ))}
         </div>
-
+          
         {/* Gráfico de Tendencias */}
         <Card>
           <CardHeader>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
             <WaterQualityChart />
           </CardContent>
         </Card>
-
+        <PredictionCard />
         {/* Generador de Informes */}
         <Card>
           <CardHeader>

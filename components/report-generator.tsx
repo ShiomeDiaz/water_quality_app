@@ -20,20 +20,34 @@ import { CalendarIcon, Download, Eye, FileText, MapPin } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
-const LOCATIONS = [
-  { id: "estacion-1", name: "Estación de Monitoreo #1 - Río Principal" },
-  { id: "estacion-2", name: "Estación de Monitoreo #2 - Lago Norte" },
-  { id: "estacion-3", name: "Estación de Monitoreo #3 - Reservorio Sur" },
-  { id: "estacion-4", name: "Estación de Monitoreo #4 - Planta de Tratamiento" },
-  { id: "estacion-5", name: "Estación de Monitoreo #5 - Zona Industrial" },
-]
+const GEORGIA_LOCATIONS = {
+  "0": "Atlanta", // Ciudad principal
+  "2198840": "Clarkesville", // Habersham County
+  "2198920": "Toccoa", // Stephens County
+  2198950: "Carnesville", // Franklin County
+  2203603: "Dahlonega", // Lumpkin County - famosa por el oro
+  2203655: "Cleveland", // White County
+  2203700: "Gainesville", // Hall County - "Poultry Capital of the World"
+  2203831: "Lawrenceville", // Gwinnett County
+  2203863: "Atlanta", // Fulton County - centro de Atlanta
+  2203873: "Decatur", // DeKalb County
+  2203900: "Marietta", // Cobb County
+  2203950: "Jonesboro", // Clayton County
+  2203960: "McDonough", // Henry County
+  2204037: "Milledgeville", // Baldwin County - antigua capital de Georgia
+  2207135: "Augusta", // Richmond County - Masters Tournament
+  2207160: "Evans", // Columbia County - suburbio de Augusta
+  
+} as const
 
 export function ReportGenerator() {
   const [selectedDate, setSelectedDate] = useState<Date>()
+  const [endDate, setendDate] = useState<Date>()
   const [selectedLocation, setSelectedLocation] = useState<string>("")
   const [reportGenerated, setReportGenerated] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [selectedLocationId, setSelectedLocationId] = useState<string>("")
   const { toast } = useToast()
   const [reportData, setReportData] = useState<any>(null)
 
@@ -50,51 +64,36 @@ export function ReportGenerator() {
       })
       return
     }
-
     setIsGenerating(true)
+    setReportGenerated(true)
 
-    try {
-      const response = await fetch("/api/water-quality/report", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date: selectedDate?.toISOString().split("T")[0],
-          location: selectedLocation,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        setReportGenerated(true)
-        setReportData(data.report)
-        toast({
-          title: "Éxito",
-          description: "Informe generado correctamente",
-        })
-      } else {
-        toast({
-          title: "Error",
-          description: data.error,
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error de conexión",
-        variant: "destructive",
-      })
-    } finally {
-      setIsGenerating(false)
-    }
   }
 
   const downloadPDF = async () => {
-    // Simular descarga de PDF
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      // Formatear fechas para la URL
+      const fechaInicioStr = selectedDate!.toISOString().split("T")[0]
+      const fechaFinStr = endDate!.toISOString().split("T")[0]
+
+      // Construir la URL del PDF
+      //const pdfUrl = `http://localhost:8080/api/ica-report/pdf?fecha_inicio=${fechaInicioStr}&fecha_fin=${fechaFinStr}`
+      const pdfUrl = `http://localhost:8080/api/ica-report/pdf?fecha_inicio=${fechaInicioStr}&fecha_fin=${fechaFinStr}&location_id=${selectedLocationId}`
+
+      // Verificar que la API esté disponible
+      window.open(pdfUrl, "_blank")
+
+      toast({
+        title: `Descarga iniciada ${selectedLocationId}`,
+        description: `Descargando reporte PDF del ${format(selectedDate!, "dd/MM/yyyy")} al ${format(endDate!, "dd/MM/yyyy")} `,
+      })
+    } catch (error) {
+      console.error("Error al descargar PDF:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo descargar el PDF. Verifica que el servidor esté disponible.",
+        variant: "destructive",
+      })
+    } 
 
     toast({
       title: "Descarga iniciada",
@@ -102,7 +101,6 @@ export function ReportGenerator() {
     })
   }
 
-  const selectedLocationName = LOCATIONS.find((loc) => loc.id === selectedLocation)?.name
 
   return (
     <div className="space-y-6">
@@ -130,37 +128,68 @@ export function ReportGenerator() {
                   <Calendar mode="single" selected={selectedDate} onSelect={setSelectedDate} initialFocus />
                 </PopoverContent>
               </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "PPP", { locale: es }) : <span>Seleccionar fecha Final</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar mode="single" selected={endDate} onSelect={setendDate} initialFocus />
+                </PopoverContent>
+              </Popover>
             </div>
           </CardContent>
         </Card>
 
         {/* Selección de Ubicación */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Ubicación de Monitoreo
-            </CardTitle>
-            <CardDescription>Selecciona la estación de monitoreo</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Estación de monitoreo</Label>
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar ubicación" />
-                </SelectTrigger>
-                <SelectContent>
-                  {LOCATIONS.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Ubicación de Monitoreo
+          </CardTitle>
+          <CardDescription>Selecciona la estación de monitoreo</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Estación de monitoreo</Label>
+            <Select 
+              value={selectedLocationId} 
+              onValueChange={(id) => {
+                setSelectedLocationId(id);
+                setSelectedLocation(GEORGIA_LOCATIONS[id as keyof typeof GEORGIA_LOCATIONS]);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar ubicación">
+                  {selectedLocationId ? (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3" />
+                      {GEORGIA_LOCATIONS[selectedLocationId as keyof typeof GEORGIA_LOCATIONS]}
+                      <span className="text-xs text-gray-500">({selectedLocationId})</span>
+                    </div>
+                  ) : null}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {Object.entries(GEORGIA_LOCATIONS)
+                  .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB))
+                  .map(([id, name]) => (
+                    <SelectItem key={id} value={id}>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3 w-3" />
+                        {name}
+                        <span className="text-xs text-gray-500">({id})</span>
+                      </div>
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
       </div>
 
       {/* Botones de Acción */}
@@ -196,7 +225,7 @@ export function ReportGenerator() {
                     <strong>Fecha de generación:</strong> {format(new Date(), "dd/MM/yyyy HH:mm")}
                   </div>
                   <div className="md:col-span-2">
-                    <strong>Ubicación:</strong> {selectedLocationName}
+                    <strong>Ubicación:</strong> {selectedLocation}
                   </div>
                 </div>
 
@@ -269,30 +298,6 @@ export function ReportGenerator() {
         </Button>
       </div>
 
-      {/* Resumen de Selección */}
-      {(selectedDate || selectedLocation) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Resumen de Selección</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {selectedDate && (
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-blue-600" />
-                  <strong>Fecha:</strong> {format(selectedDate, "dd/MM/yyyy")}
-                </div>
-              )}
-              {selectedLocation && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-green-600" />
-                  <strong>Ubicación:</strong> {selectedLocationName}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

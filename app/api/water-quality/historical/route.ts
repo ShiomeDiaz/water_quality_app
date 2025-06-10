@@ -20,13 +20,6 @@ export async function GET() {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    // Registrar los headers de respuesta para depuración
-    console.log("Headers de respuesta:", {
-      contentType: response.headers.get("content-type"),
-      contentLength: response.headers.get("content-length"),
-      date: response.headers.get("date"),
-      server: response.headers.get("server"),
-    })
 
     const externalData = await response.json()
     //console.log(externalData['registros'])
@@ -81,8 +74,6 @@ export async function GET() {
 
     // Determinar el origen de los datos
     const dataSource = baseRecord ? "external_api_extrapolated" : "fallback"
-    console.log(transformedData)
-    console.log(externalData['registros'])
     // Crear la respuesta con los headers adecuados
     const nextResponse = NextResponse.json({
       success: true,
