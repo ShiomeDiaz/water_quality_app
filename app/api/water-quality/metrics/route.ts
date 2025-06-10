@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 
 // Función para generar datos aleatorios realistas
 function generateRealisticData() {
+
+  
   return {
     ph: +(6.5 + Math.random() * 2).toFixed(2),
     oxygen: +(6 + Math.random() * 4).toFixed(2),
@@ -15,12 +17,14 @@ function generateRealisticData() {
 // Función para determinar el estado basado en el valor
 function getStatus(parameter: string, value: number): "excellent" | "good" | "fair" | "poor" {
   const ranges: Record<string, { excellent: [number, number]; good: [number, number]; fair: [number, number] }> = {
-    ph: { excellent: [7.0, 7.5], good: [6.8, 7.8], fair: [6.5, 8.0] },
-    oxygen: { excellent: [8, 10], good: [6, 8], fair: [4, 6] },
-    temperature: { excellent: [20, 25], good: [18, 28], fair: [15, 30] },
-    conductivity: { excellent: [200, 400], good: [400, 600], fair: [600, 800] },
-    turbidity: { excellent: [0, 1], good: [1, 2], fair: [2, 4] },
-    chlorine: { excellent: [0.8, 1.2], good: [0.5, 1.5], fair: [0.2, 2.0] },
+    ph: { excellent: [0, 0.3], good: [0.3, 0.7], fair: [0.7, 0.9] },
+    e_coli: { excellent: [0, 50], good: [50, 150], fair: [150, 250] },
+    coliformes_totales: { excellent: [0, 200], good: [200, 600], fair: [600, 900] },
+    turbidez: { excellent: [0, 1], good: [1, 3], fair: [3, 4] },
+    nitratos: { excellent: [0, 0.3], good: [0.3, 0.7], fair: [0.7, 0.9] },
+    fosfatos: { excellent: [0, 0.1], good: [0.1, 0.25], fair: [0.25, 0.32] },
+    dbo5: { excellent: [0, 20], good: [20, 50], fair: [50, 70] },
+    solidos_suspendidos: { excellent: [0, 30], good: [30, 70], fair: [70, 90] },
   }
 
   const range = ranges[parameter]
@@ -36,58 +40,92 @@ export async function GET() {
   try {
     // Simular delay de red
     await new Promise((resolve) => setTimeout(resolve, 800))
-
     const data = generateRealisticData()
+
+    const today = new Date().toISOString().split("T")[0]
+    const apiUrl = `http://127.0.0.1:3033/registros?fecha_inicio=${today}&page=1&limit=1`
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      cache: "no-cache", // Asegurarse de obtener datos frescos
+    })
+
+    if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`)
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    const externalData = await response.json()
 
     const metrics = [
       {
         id: "ph",
         name: "pH",
-        value: data.ph,
+        value: externalData['registros'][0]['pH'],
         unit: "",
-        status: getStatus("ph", data.ph),
-        range: { min: 6.5, max: 8.5 },
+        status: getStatus("ph", externalData['registros'][0]['pH']),
+        range: { min: 0, max: 0.5 },
       },
       {
-        id: "oxygen",
-        name: "Oxígeno Disuelto",
-        value: data.oxygen,
-        unit: "mg/L",
-        status: getStatus("oxygen", data.oxygen),
-        range: { min: 5, max: 10 },
+        id: "e_coli",
+        name: "E. Coli",
+        value: externalData['registros'][0]['E_coli'],
+        unit: "UFC/100ml",
+        status: getStatus("e_coli", externalData['registros'][0]['E_coli']),
+        range: { min: 0, max: 500 },
       },
       {
-        id: "temperature",
-        name: "Temperatura",
-        value: data.temperature,
-        unit: "°C",
-        status: getStatus("temperature", data.temperature),
-        range: { min: 15, max: 30 },
+        id: "coliformes_totales",
+        name: "Coliformes Totales",
+        value: externalData['registros'][0]['Coliformes_totales'],
+        unit: "UFC/100ml",
+        status: getStatus("coliformes_totales", externalData['registros'][0]['Coliformes_totales']),
+        range: { min: 0, max: 1000 },
       },
       {
-        id: "conductivity",
-        name: "Conductividad",
-        value: data.conductivity,
-        unit: "μS/cm",
-        status: getStatus("conductivity", data.conductivity),
-        range: { min: 200, max: 800 },
-      },
-      {
-        id: "turbidity",
+        id: "turbidez",
         name: "Turbidez",
-        value: data.turbidity,
+        value: externalData['registros'][0]['Turbidez'],
         unit: "NTU",
-        status: getStatus("turbidity", data.turbidity),
+        status: getStatus("turbidez",externalData['registros'][0]['Turbidez']),
+        range: { min: 0, max: 10 },
+      },
+      {
+        id: "nitratos",
+        name: "Nitratos",
+        value: externalData['registros'][0]['Nitratos'],
+        unit: "mg/L",
+        status: getStatus("nitratos", externalData['registros'][0]['Nitratos']),
         range: { min: 0, max: 5 },
       },
       {
-        id: "chlorine",
-        name: "Cloro Residual",
-        value: data.chlorine,
+        id: "fosfatos",
+        name: "Fosfatos",
+        value: externalData['registros'][0]['Fosfatos'],
         unit: "mg/L",
-        status: getStatus("chlorine", data.chlorine),
-        range: { min: 0.2, max: 2.0 },
+        status: getStatus("fosfatos", externalData['registros'][0]['Fosfatos']),
+        range: { min: 0, max: 1 },
       },
+      {
+        id: "dbo5",
+        name: "DBO5",
+        value: externalData['registros'][0]['DBO5'],
+        unit: "mg/L",
+        status: getStatus("dbo5", externalData['registros'][0]['DBO5']),
+        range: { min: 0, max: 15 },
+      },
+      {
+        id: "solidos_suspendidos",
+        name: "Sólidos Suspendidos",
+        value: externalData['registros'][0]['Solidos_suspendidos'],
+        unit: "mg/L",
+        status: getStatus("solidos_suspendidos",externalData['registros'][0]['Solidos_suspendidos']),
+        range: { min: 0, max: 50 },
+      },
+    
     ]
 
     // Calcular ICA
