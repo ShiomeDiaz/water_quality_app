@@ -80,7 +80,7 @@ export async function GET() {
       {
         id: "coliformes_totales",
         name: "Coliformes Totales",
-        value: externalData['registros'][0]['Coliformes_totales'],
+        value: Number(externalData['registros'][0]['Coliformes_totales']).toFixed(5),
         unit: "UFC/100ml",
         status: getStatus("coliformes_totales", externalData['registros'][0]['Coliformes_totales']),
         range: { min: 0, max: 1000 },
@@ -88,7 +88,7 @@ export async function GET() {
       {
         id: "turbidez",
         name: "Turbidez",
-        value: externalData['registros'][0]['Turbidez'],
+        value: Number(externalData['registros'][0]['Turbidez']).toFixed(5),
         unit: "NTU",
         status: getStatus("turbidez",externalData['registros'][0]['Turbidez']),
         range: { min: 0, max: 10 },
@@ -96,7 +96,7 @@ export async function GET() {
       {
         id: "nitratos",
         name: "Nitratos",
-        value: externalData['registros'][0]['Nitratos'],
+        value: Number(externalData['registros'][0]['Nitratos']).toFixed(5),
         unit: "mg/L",
         status: getStatus("nitratos", externalData['registros'][0]['Nitratos']),
         range: { min: 0, max: 5 },
@@ -104,7 +104,7 @@ export async function GET() {
       {
         id: "fosfatos",
         name: "Fosfatos",
-        value: externalData['registros'][0]['Fosfatos'],
+        value: Number(externalData['registros'][0]['Fosfatos']).toFixed(5),
         unit: "mg/L",
         status: getStatus("fosfatos", externalData['registros'][0]['Fosfatos']),
         range: { min: 0, max: 1 },
@@ -112,7 +112,7 @@ export async function GET() {
       {
         id: "dbo5",
         name: "DBO5",
-        value: externalData['registros'][0]['DBO5'],
+        value: Number(externalData['registros'][0]['DBO5']).toFixed(5),
         unit: "mg/L",
         status: getStatus("dbo5", externalData['registros'][0]['DBO5']),
         range: { min: 0, max: 15 },
@@ -120,7 +120,7 @@ export async function GET() {
       {
         id: "solidos_suspendidos",
         name: "Sólidos Suspendidos",
-        value: externalData['registros'][0]['Solidos_suspendidos'],
+        value: Number(externalData['registros'][0]['Solidos_suspendidos']).toFixed(5),
         unit: "mg/L",
         status: getStatus("solidos_suspendidos",externalData['registros'][0]['Solidos_suspendidos']),
         range: { min: 0, max: 50 },
